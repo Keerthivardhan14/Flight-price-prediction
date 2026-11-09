@@ -108,7 +108,7 @@ if VER == "B":
     S.append(seg("s20_diya", "aarti", 14.55, 0.90, speed=0.5, z0=1.7, z1=1.8, cx=0.36, cy=0.80,
                  extra="eq=gamma=0.6:brightness=-0.08", fadein=0.3, fadeout=0.45))
 else:
-    S.append(seg("s19_gold", "aerial", 3.65, 1.62, z0=1.30, z1=1.15, cx=0.5, cy=0.22, grade=FIRE, glow=0.6, fadeout=0.5))
+    S.append(seg("s19_gold", "aerial", 3.65, 2.32, z0=1.30, z1=1.12, cx=0.5, cy=0.22, grade=FIRE, glow=0.6, fadeout=0.45))
 
 # ---------------------------------------------------------------- concat + flashes
 with open(W + "list.txt", "w") as f:
@@ -126,8 +126,21 @@ if VER == "B": flashes = [(0.0, .5)] + flashes
 fx = "+".join(f"{a}*exp(-(t-{T})/0.07)*gte(t,{T})" for T, a in flashes)
 vpost = f"eq=brightness='{fx}':eval=frame"
 if VER == "B": vpost += ",noise=c0s=7:c0f=t+u,eq=contrast=1.02"
+T0, T1 = 23.30, TOTAL                       # slogan in after the final hit, out with the fade
+al = f"if(lt(t,{T0}),0,if(lt(t,{T0}+0.5),(t-{T0})/0.5,if(gt(t,{T1}-0.35),max(0,({T1}-t)/0.35),1)))"
+al2 = al.replace(f"{T0}", f"{T0+0.25}")
+FS = "/usr/share/fonts/truetype/crosextra/Caladea-Italic.ttf"
+FL = "/usr/share/fonts/opentype/inter/Inter-Light.otf"
+txt = (f"drawtext=fontfile={FL}:text='D I W A L I    2 0 2 6':fontsize=38:fontcolor=0xF6E7C1:"
+       f"x=(w-text_w)/2:y=h*0.70:alpha='{al}',"
+       f"drawtext=fontfile={FS}:text='Done & Dusted':fontsize=118:fontcolor=0xF9D98B:"
+       f"x=(w-text_w)/2:y=h*0.70+62:alpha='{al2}'")
+slog = (f"color=c=black@0.0:s=1080x1920:r=30:d={TOTAL},format=rgba,{txt},split[t0][t1];"
+        "[t1]gblur=sigma=14,colorchannelmixer=rr=1.2:gg=0.85:bb=0.35[tg]")
+vfc = (f"[0:v]{vpost}[b];{slog};[b][tg]overlay=format=auto[b2];[b2][t0]overlay=format=auto,format=yuv420p[v]"
+       if VER == "A" else f"[0:v]{vpost},format=yuv420p[v]")
 run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", W + "list.txt",
-     "-vf", vpost + ",format=yuv420p", "-c:v", "libx264", "-crf", "14", "-preset", "fast", W + "video.mp4"])
+     "-filter_complex", vfc, "-map", "[v]", "-c:v", "libx264", "-crf", "14", "-preset", "fast", W + "video.mp4"])
 
 # ---------------------------------------------------------------- audio
 A = W
@@ -158,10 +171,10 @@ run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", f"anoisesrc=c=wh
 nat = [  # (src, ss, reel_start, dur, gain)
     ("pooja7", 0.0, 0.0, 7.0, 1.8),        # quiet room tone during pooja (other pooja clips carry added music)
     ("fountain", 13.45, 8.40, 0.90, 1.6),   # fuse sizzle
-    ("fountain", 22.50, 9.30, 3.25, 0.55),  # fountain roar
-    ("sparkler", 7.60, 12.55, 3.56, 0.6),   # sparkler + family
-    ("crackers", 7.35, 16.74, 1.34, 0.6),
-    ("aerial", 13.61, 18.08, 6.3, 0.55),    # finale fireworks natural booms
+    ("fountain", 22.50, 9.30, 3.25, 0.18),  # fountain roar
+    ("sparkler", 7.60, 12.55, 3.56, 0.4),   # sparkler + family
+    ("crackers", 7.35, 16.74, 1.34, 0.4),
+    ("aerial", 13.61, 18.08, 6.92, 0.4),    # finale fireworks natural booms
 ]
 sec = []
 for i, (src, ss, st, d, g) in enumerate(nat):
@@ -180,10 +193,10 @@ run(["ffmpeg", "-y", "-loglevel", "error", "-ss", str(s_in), "-i", SONG, "-t", s
 
 # assemble: [file, reel_start, gain]
 P0 = 0.8 if VER == "B" else 0.0
-mix = [(songA, s_in - OFF, 1.0), (A + "pad.wav", P0, 0.0), (A + "bell.wav", P0 + 0.15, 0.55),
+mix = [(songA, s_in - OFF, 1.35), (A + "pad.wav", P0, 0.0), (A + "bell.wav", P0 + 0.15, 0.55),
        (A + "bell.wav", 4.40, 0.30), (A + "rumble.wav", 5.4, 0.0), (A + "riser.wav", 7.1, 0.35),
-       (A + "tick.wav", 8.42, 0.8), (A + "impact.wav", DROP, 0.9), (A + "impact.wav", 16.74, 0.45),
-       (A + "impact.wav", 19.99, 0.4), (A + "impact.wav", 23.18, 0.95)] + [(o, st, 1.0) for o, st in sec]
+       (A + "tick.wav", 8.42, 0.8), (A + "impact.wav", DROP, 0.6), (A + "impact.wav", 16.74, 0.45),
+       (A + "impact.wav", 19.99, 0.4), (A + "impact.wav", 23.18, 0.85), (A + "bell.wav", 23.50, 0.35)] + [(o, st, 1.0) for o, st in sec]
 if VER == "B":
     mix = [(f, st + 0.0, g) for f, st, g in mix]  # timeline identical after 0.8s; tease audio added below
     mix += [(A + "impact.wav", 0.0, 0.8), (A + "bell.wav", 23.95, 0.45)]

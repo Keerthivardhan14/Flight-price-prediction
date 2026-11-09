@@ -36,7 +36,11 @@ Opening 0–6 s has no song: synthesized temple bell + warm C drone (key-matched
 | 19.48–20.62 | White starburst | ..1446086882 @ 7.89 | flash on peak (19.99) |
 | 20.62–21.56 | Terrace fountain ignites | ..1446086882 @ 20.46 | flash on kick |
 | 21.56–22.68 | Fountains | ..144010420 @ 25.00 | flash on kick |
-| 22.68–24.30 | **Golden burst — final hit** | ..1446086882 @ 3.65 | burst lands on last kick 23.18, impact, decay to black |
+| 22.68–25.00 | **Golden burst — final hit** + slogan | ..1446086882 @ 3.65 | burst lands on last kick 23.18, impact; "DIWALI 2026 / *Done & Dusted*" (gold, Inter Light + Caladea Italic, soft glow) fades in at 23.30 with a soft bell; fade to black |
+
+## Revision 2 (chosen: Version A)
+- Music raised over the fountain shots: fountain roar 0.55→0.18, drop impact 0.9→0.6, song +2.6 dB; sparkler/cracker/aerial natural sound lowered too. Song now sits ~16 dB above the fountain roar (was ~3 dB).
+- Slogan added at the end; reel extended to 25.0 s.
 
 ## Version B (director's cut) — differences
 - 0.0–0.5 s cold-open teaser of the golden burst + impact, 0.3 s black, then bell (hooks viewers in the first second; deity shot shortened so all later timings stay identical).
