@@ -108,7 +108,7 @@ if VER == "B":
     S.append(seg("s20_diya", "aarti", 14.55, 0.90, speed=0.5, z0=1.7, z1=1.8, cx=0.36, cy=0.80,
                  extra="eq=gamma=0.6:brightness=-0.08", fadein=0.3, fadeout=0.45))
 else:
-    S.append(seg("s19_gold", "aerial", 3.65, 2.32, z0=1.30, z1=1.12, cx=0.5, cy=0.22, grade=FIRE, glow=0.6, fadeout=0.45))
+    S.append(seg("s19_gold", "aerial", 3.65, 2.32, z0=1.30, z1=1.12, cx=0.5, cy=0.22, grade=FIRE, glow=0.6, fadeout=0.12))
 
 # ---------------------------------------------------------------- concat + flashes
 with open(W + "list.txt", "w") as f:
@@ -127,7 +127,7 @@ fx = "+".join(f"{a}*exp(-(t-{T})/0.07)*gte(t,{T})" for T, a in flashes)
 vpost = f"eq=brightness='{fx}':eval=frame"
 if VER == "B": vpost += ",noise=c0s=7:c0f=t+u,eq=contrast=1.02"
 T0, T1 = 23.30, TOTAL                       # slogan in after the final hit, out with the fade
-al = f"if(lt(t,{T0}),0,if(lt(t,{T0}+0.5),(t-{T0})/0.5,if(gt(t,{T1}-0.35),max(0,({T1}-t)/0.35),1)))"
+al = f"if(lt(t,{T0}),0,if(lt(t,{T0}+0.5),(t-{T0})/0.5,if(gt(t,{T1}-0.12),max(0,({T1}-t)/0.12),1)))"
 al2 = al.replace(f"{T0}", f"{T0+0.25}")
 FS = "/usr/share/fonts/truetype/crosextra/Caladea-Italic.ttf"
 FL = "/usr/share/fonts/opentype/inter/Inter-Light.otf"
@@ -170,7 +170,7 @@ run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", f"anoisesrc=c=wh
 # natural sound bed, per section, from the real clips (aarti clip has added music: not used)
 nat = [  # (src, ss, reel_start, dur, gain)
     ("pooja7", 0.0, 0.0, 7.0, 1.8),        # quiet room tone during pooja (other pooja clips carry added music)
-    ("fountain", 13.45, 8.40, 0.90, 1.6),   # fuse sizzle
+    ("fountain", 13.45, 8.40, 0.45, 1.6),   # fuse sizzle (stops before a loud bang at +0.5 s)
     ("fountain", 22.50, 9.30, 3.25, 0.18),  # fountain roar
     ("sparkler", 7.60, 12.55, 3.56, 0.4),   # sparkler + family
     ("crackers", 7.35, 16.74, 1.34, 0.4),
@@ -185,17 +185,24 @@ for i, (src, ss, st, d, g) in enumerate(nat):
 
 songA = A + "song.wav"
 s_in = 14.40                                   # breakdown starts under the flame
-run(["ffmpeg", "-y", "-loglevel", "error", "-ss", str(s_in), "-i", SONG, "-t", str(31.52 - s_in),
-     "-af", (f"aresample={SR},"
-             # reel-relative envelope (t=0 is reel 6.13): swell in, near-silence before the drop, full after
-             "volume='if(lt(t,2.5), 0.05+0.30*t/2.5, if(lt(t,2.62), 0.35-2.6*(t-2.5), if(lt(t,3.17), 0.04, 1)))':eval=frame,"
-             f"afade=out:st={31.52-s_in-0.18}:d=0.18"), "-ac", "2", songA])
+# The recording stops at 31.52 s (reel 23.25). To keep the beat running to the last frame,
+# play up to the downbeat at 31.45 and then repeat the previous bar (29.60 -> 31.45, 4 beats of 0.4627 s).
+SPLICE, LOOP0 = 31.45, 29.60
+need = TOTAL - (SPLICE - OFF) + 0.1
+run(["ffmpeg", "-y", "-loglevel", "error", "-ss", str(s_in), "-t", str(SPLICE - s_in + 0.01), "-i", SONG,
+     "-ss", str(LOOP0), "-t", str(need), "-i", SONG, "-filter_complex",
+     (f"[0:a]aresample={SR},"
+      # reel-relative envelope (t=0 is reel 6.13): swell in, near-silence before the drop, full after
+      # gradual: steady crescendo under the flame (no silent gap), then ease up to full ~1.3 s after the drop
+      "volume='if(lt(t,3.17), 0.05+0.47*pow(t/3.17,1.6), min(1, 0.52+0.48*pow(min((t-3.17)/1.3,1),0.8)))':eval=frame[s1];"
+      f"[1:a]aresample={SR}[s2];[s1][s2]acrossfade=d=0.01:c1=tri:c2=tri[o]"),
+     "-map", "[o]", "-ac", "2", songA])
 
 # assemble: [file, reel_start, gain]
 P0 = 0.8 if VER == "B" else 0.0
 mix = [(songA, s_in - OFF, 1.35), (A + "pad.wav", P0, 0.0), (A + "bell.wav", P0 + 0.15, 0.55),
        (A + "bell.wav", 4.40, 0.30), (A + "rumble.wav", 5.4, 0.0), (A + "riser.wav", 7.1, 0.35),
-       (A + "tick.wav", 8.42, 0.8), (A + "impact.wav", DROP, 0.6), (A + "impact.wav", 16.74, 0.45),
+       (A + "tick.wav", 8.42, 0.8), (A + "impact.wav", DROP, 0.4), (A + "impact.wav", 16.74, 0.45),
        (A + "impact.wav", 19.99, 0.4), (A + "impact.wav", 23.18, 0.85), (A + "bell.wav", 23.50, 0.35)] + [(o, st, 1.0) for o, st in sec]
 if VER == "B":
     mix = [(f, st + 0.0, g) for f, st, g in mix]  # timeline identical after 0.8s; tease audio added below
@@ -217,7 +224,7 @@ for i, (f, st, g) in enumerate(mix):
 fl.append("".join(f"[a{i}]" for i in range(len(mix))) +
           f"amix=inputs={len(mix)}:normalize=0:duration=longest,atrim=0:{TOTAL},"
           "highpass=f=28,acompressor=threshold=0.25:ratio=2.5:attack=8:release=180,"
-          f"alimiter=limit=0.89:level=false,afade=out:st={TOTAL-0.35}:d=0.35[out]")
+          f"alimiter=limit=0.89:level=false,afade=out:st={TOTAL-0.06}:d=0.06[out]")
 run(["ffmpeg", "-y", "-loglevel", "error", *ins, "-filter_complex", ";".join(fl), "-map", "[out]",
      "-ar", str(SR), A + "mix.wav"])
 
