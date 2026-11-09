@@ -127,17 +127,24 @@ fx = "+".join(f"{a}*exp(-(t-{T})/0.07)*gte(t,{T})" for T, a in flashes)
 vpost = f"eq=brightness='{fx}':eval=frame"
 if VER == "B": vpost += ",noise=c0s=7:c0f=t+u,eq=contrast=1.02"
 T0, T1 = 23.30, TOTAL                       # slogan in after the final hit, out with the fade
-al = f"if(lt(t,{T0}),0,if(lt(t,{T0}+0.5),(t-{T0})/0.5,if(gt(t,{T1}-0.6),max(0,({T1}-t)/0.6),1)))"
-al2 = al.replace(f"{T0}", f"{T0+0.25}")
-FS = "/usr/share/fonts/truetype/crosextra/Caladea-Italic.ttf"
-FL = "/usr/share/fonts/opentype/inter/Inter-Light.otf"
-txt = (f"drawtext=fontfile={FL}:text='D I W A L I    2 0 2 6':fontsize=38:fontcolor=0xF6E7C1:"
-       f"x=(w-text_w)/2:y=h*0.70:alpha='{al}',"
-       f"drawtext=fontfile={FS}:text='Done & Dusted':fontsize=118:fontcolor=0xF9D98B:"
-       f"x=(w-text_w)/2:y=h*0.70+62:alpha='{al2}'")
+# Modern stacked title: small tracked gold label + two heavy caps lines, staggered slide-up pop-in.
+FD = "/usr/share/fonts/opentype/inter/"
+def tf(name, s):
+    p = W + name + ".txt"; open(p, "w").write(s); return p
+def line(font, text, size, color, y, ts):
+    p = f"clip((t-{ts})/0.35,0,1)"
+    a = f"if(lt(t,{ts}),0,if(lt(t,{ts}+0.22),(t-{ts})/0.22,if(gt(t,{T1}-0.6),max(0,({T1}-t)/0.6),1)))"
+    return (f"drawtext=fontfile={FD}{font}:textfile={tf(font[:-4] + str(y), text)}:fontsize={size}:"
+            f"fontcolor={color}:x=(w-text_w)/2:y='{y}+48*pow(1-{p},3)':alpha='{a}'")
+txt = ",".join([
+    line("InterDisplay-SemiBold.otf", "D I W A L I   ’ 2 6", 34, "0xFFC75A", 1060, T0),
+    line("InterDisplay-Black.otf", "DONE &", 160, "0xFFFFFF", 1112, T0 + 0.12),
+    line("InterDisplay-Black.otf", "DUSTED.", 160, "0xFFFFFF", 1262, T0 + 0.24),
+])
 slog = (f"color=c=black@0.0:s=1080x1920:r=30:d={TOTAL},format=rgba,{txt},split[t0][t1];"
-        "[t1]gblur=sigma=14,colorchannelmixer=rr=1.2:gg=0.85:bb=0.35[tg]")
-vfc = (f"[0:v]{vpost}[b];{slog};[b][tg]overlay=format=auto[b2];[b2][t0]overlay=format=auto,format=yuv420p[v]"
+        "[t1]gblur=sigma=22,colorchannelmixer=rr=1.0:gg=0.62:bb=0.18:aa=0.9[tg]")
+slog = slog.replace("split[t0][t1]", "split=3[t0][t1][t2]") + ";[t2]gblur=sigma=40,colorchannelmixer=rr=0:gg=0:bb=0:aa=1.6[ts]"
+vfc = (f"[0:v]{vpost}[b];{slog};[b][ts]overlay=format=auto[b1];[b1][tg]overlay=format=auto[b2];[b2][t0]overlay=format=auto,format=yuv420p[v]"
        if VER == "A" else f"[0:v]{vpost},format=yuv420p[v]")
 run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", W + "list.txt",
      "-filter_complex", vfc, "-map", "[v]", "-c:v", "libx264", "-crf", "14", "-preset", "fast", W + "video.mp4"])

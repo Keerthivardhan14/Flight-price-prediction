@@ -49,6 +49,9 @@ Opening 0–6 s has no song: synthesized temple bell + warm C drone (key-matched
 ## Revision 4 (final)
 - Ending: the looped beat keeps playing and fades out smoothly over the last 1.4 s (23.6 → 25.0, sine curve); picture and slogan fade to black over the last 0.6 s.
 
+## Revision 5
+- Title restyled: small tracked gold label "DIWALI '26" + stacked heavy caps "DONE &" / "DUSTED." (Inter Display SemiBold/Black, white with warm glow and soft shadow), staggered slide-up pop-in at 23.30 / 23.42 / 23.54 s.
+
 ## Version B (director's cut) — differences
 - 0.0–0.5 s cold-open teaser of the golden burst + impact, 0.3 s black, then bell (hooks viewers in the first second; deity shot shortened so all later timings stay identical).
 - Subtle film grain over the whole reel.
