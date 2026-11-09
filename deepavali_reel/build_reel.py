@@ -126,27 +126,53 @@ if VER == "B": flashes = [(0.0, .5)] + flashes
 fx = "+".join(f"{a}*exp(-(t-{T})/0.07)*gte(t,{T})" for T, a in flashes)
 vpost = f"eq=brightness='{fx}':eval=frame"
 if VER == "B": vpost += ",noise=c0s=7:c0f=t+u,eq=contrast=1.02"
-T0, T1 = 23.30, TOTAL                       # slogan in after the final hit, out with the fade
-# Modern stacked title: small tracked gold label + two heavy caps lines, staggered slide-up pop-in.
+T0, T1 = 23.41, TOTAL          # title lines land on half-beats after the final hit (23.18)
+HB = 0.4627 / 2
 FD = "/usr/share/fonts/opentype/inter/"
 def tf(name, s):
     p = W + name + ".txt"; open(p, "w").write(s); return p
-def line(font, text, size, color, y, ts):
+def fade(ts, d):
+    return f"if(lt(t,{ts}),0,if(lt(t,{ts}+{d}),(t-{ts})/{d},if(gt(t,{T1}-0.6),max(0,({T1}-t)/0.6),1)))"
+def label(text, size, color, y, ts):          # small line: slide up + fade
     p = f"clip((t-{ts})/0.35,0,1)"
-    a = f"if(lt(t,{ts}),0,if(lt(t,{ts}+0.22),(t-{ts})/0.22,if(gt(t,{T1}-0.6),max(0,({T1}-t)/0.6),1)))"
-    return (f"drawtext=fontfile={FD}{font}:textfile={tf(font[:-4] + str(y), text)}:fontsize={size}:"
-            f"fontcolor={color}:x=(w-text_w)/2:y='{y}+48*pow(1-{p},3)':alpha='{a}'")
-txt = ",".join([
-    line("InterDisplay-SemiBold.otf", "D I W A L I   ’ 2 6", 34, "0xFFC75A", 1060, T0),
-    line("InterDisplay-Black.otf", "DONE &", 160, "0xFFFFFF", 1112, T0 + 0.12),
-    line("InterDisplay-Black.otf", "DUSTED.", 160, "0xFFFFFF", 1262, T0 + 0.24),
-])
-slog = (f"color=c=black@0.0:s=1080x1920:r=30:d={TOTAL},format=rgba,{txt},split[t0][t1];"
-        "[t1]gblur=sigma=22,colorchannelmixer=rr=1.0:gg=0.62:bb=0.18:aa=0.9[tg]")
-slog = slog.replace("split[t0][t1]", "split=3[t0][t1][t2]") + ";[t2]gblur=sigma=40,colorchannelmixer=rr=0:gg=0:bb=0:aa=1.6[ts]"
-vfc = (f"[0:v]{vpost}[b];{slog};[b][ts]overlay=format=auto[b1];[b1][tg]overlay=format=auto[b2];[b2][t0]overlay=format=auto,format=yuv420p[v]"
-       if VER == "A" else f"[0:v]{vpost},format=yuv420p[v]")
-run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", W + "list.txt",
+    return (f"drawtext=fontfile={FD}InterDisplay-SemiBold.otf:textfile={tf('lab', text)}:fontsize={size}:"
+            f"fontcolor={color}:x=(w-text_w)/2:y='{y}+30*pow(1-{p},3)':alpha='{fade(ts, 0.25)}'")
+def punch(text, size, color, yc, ts):         # big line: spring scale-in on the beat (overshoot, settle)
+    d = f"(t-{ts})"
+    fs = f"{size}*(1+0.24*exp(-{d}/0.09)*cos({d}*28)*gte(t,{ts}))"
+    return (f"drawtext=fontfile={FD}InterDisplay-Black.otf:textfile={tf('big' + str(yc), text)}:fontsize='{fs}':"
+            f"fontcolor={color}:x=(w-text_w)/2:y='{yc}-text_h/2':alpha='{fade(ts, 0.06)}'")
+BIG = [("DONE &", 1192, T0 + HB), ("DUSTED.", 1342, T0 + 2 * HB)]
+txt = ",".join([label("D I W A L I   ’ 2 6", 34, "0xFFC75A", 1060, T0)] +
+               [punch(tx, 160, "0xFFFFFF", yc, ts) for tx, yc, ts in BIG])
+txt_mask = ",".join(punch(tx, 160, "0xFFFFFF", yc, ts) for tx, yc, ts in BIG)
+
+# beat pulse: 3.5% zoom kick on every beat from the re-drop to the final hit (5% on the final)
+kicks = [(round(DROP + n * 0.4627, 3), 0.05 if n == 30 else 0.035) for n in range(16, 31)]
+P = "+".join(f"{a}*exp(-(in/30-{k})/0.13)*gte(in/30,{k})" for k, a in kicks)
+pulse = (f"scale=2160:3840:flags=bicubic,zoompan=z='1+{P}':x='(iw-iw/zoom)/2':y='(ih-ih/zoom)/2'"
+         ":d=1:s=1080x1920:fps=30,setpts=N/30/TB")
+
+# gold shine band (one sweep across the big title)
+band = W + "band.png"
+run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "color=c=white:s=300x2600:d=0.04",
+     "-vf", "format=rgba,geq=r=255:g=232:b=170:a='235*exp(-pow((X-150)/48,2))',rotate=0.26:c=none:ow=rotw(0.26):oh=roth(0.26)",
+     "-frames:v", "1", band])
+SH0, SHD = T0 + 2 * HB + 0.12, 0.70
+slog = (f"color=c=black@0.0:s=1080x1920:r=30:d={TOTAL},format=rgba,{txt},split=3[t0][t1][t2];"
+        "[t1]gblur=sigma=22,colorchannelmixer=rr=1.0:gg=0.62:bb=0.18:aa=0.9[tg];"
+        "[t2]gblur=sigma=40,colorchannelmixer=rr=0:gg=0:bb=0:aa=1.6[ts];"
+        f"color=c=black@0.0:s=1080x1920:r=30:d={TOTAL},format=rgba,{txt_mask},format=gbrap[tm];"
+        f"color=c=black@0.0:s=1080x1920:r=30:d={TOTAL},format=rgba[cv];"
+        f"[cv][1:v]overlay=x='-500+1800*(t-{SH0})/{SHD}':y=-380:enable='between(t,{SH0},{SH0 + SHD})':format=auto,format=gbrap[bc];"
+        "[tm][bc]blend=all_mode=multiply,format=rgba[shine]")
+if VER == "A":
+    vfc = (f"[0:v]{vpost},{pulse}[b];{slog};[b][ts]overlay=format=auto[b1];[b1][tg]overlay=format=auto[b2];"
+           "[b2][t0]overlay=format=auto[b3];[b3][shine]overlay=format=auto,format=yuv420p[v]")
+    extra_in = ["-loop", "1", "-t", str(TOTAL), "-i", band]
+else:
+    vfc = f"[0:v]{vpost},format=yuv420p[v]"; extra_in = []
+run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", W + "list.txt", *extra_in,
      "-filter_complex", vfc, "-map", "[v]", "-c:v", "libx264", "-crf", "14", "-preset", "fast", W + "video.mp4"])
 
 # ---------------------------------------------------------------- audio
