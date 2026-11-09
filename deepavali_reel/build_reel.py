@@ -108,7 +108,7 @@ if VER == "B":
     S.append(seg("s20_diya", "aarti", 14.55, 0.90, speed=0.5, z0=1.7, z1=1.8, cx=0.36, cy=0.80,
                  extra="eq=gamma=0.6:brightness=-0.08", fadein=0.3, fadeout=0.45))
 else:
-    S.append(seg("s19_gold", "aerial", 3.65, 2.32, z0=1.30, z1=1.12, cx=0.5, cy=0.22, grade=FIRE, glow=0.6, fadeout=0.12))
+    S.append(seg("s19_gold", "aerial", 3.65, 2.32, z0=1.30, z1=1.12, cx=0.5, cy=0.22, grade=FIRE, glow=0.6, fadeout=0.6))
 
 # ---------------------------------------------------------------- concat + flashes
 with open(W + "list.txt", "w") as f:
@@ -127,7 +127,7 @@ fx = "+".join(f"{a}*exp(-(t-{T})/0.07)*gte(t,{T})" for T, a in flashes)
 vpost = f"eq=brightness='{fx}':eval=frame"
 if VER == "B": vpost += ",noise=c0s=7:c0f=t+u,eq=contrast=1.02"
 T0, T1 = 23.30, TOTAL                       # slogan in after the final hit, out with the fade
-al = f"if(lt(t,{T0}),0,if(lt(t,{T0}+0.5),(t-{T0})/0.5,if(gt(t,{T1}-0.12),max(0,({T1}-t)/0.12),1)))"
+al = f"if(lt(t,{T0}),0,if(lt(t,{T0}+0.5),(t-{T0})/0.5,if(gt(t,{T1}-0.6),max(0,({T1}-t)/0.6),1)))"
 al2 = al.replace(f"{T0}", f"{T0+0.25}")
 FS = "/usr/share/fonts/truetype/crosextra/Caladea-Italic.ttf"
 FL = "/usr/share/fonts/opentype/inter/Inter-Light.otf"
@@ -224,7 +224,7 @@ for i, (f, st, g) in enumerate(mix):
 fl.append("".join(f"[a{i}]" for i in range(len(mix))) +
           f"amix=inputs={len(mix)}:normalize=0:duration=longest,atrim=0:{TOTAL},"
           "highpass=f=28,acompressor=threshold=0.25:ratio=2.5:attack=8:release=180,"
-          f"alimiter=limit=0.89:level=false,afade=out:st={TOTAL-0.06}:d=0.06[out]")
+          f"alimiter=limit=0.89:level=false,afade=out:st={TOTAL-1.4}:d=1.4:curve=qsin[out]")
 run(["ffmpeg", "-y", "-loglevel", "error", *ins, "-filter_complex", ";".join(fl), "-map", "[out]",
      "-ar", str(SR), A + "mix.wav"])
 

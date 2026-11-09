@@ -46,6 +46,9 @@ Opening 0–6 s has no song: synthesized temple bell + warm C drone (key-matched
 - Ending keeps the beat: the recording stops at song 31.52 s, so the last bar (29.60→31.45, 4 × 0.4627 s) is repeated from the downbeat at 31.45 s; music runs at full level to the last frame and the video cuts on the next downbeat (25.0 s). Fades shortened to 0.06–0.12 s.
 - Softer jump into the drop: no near-silent gap any more; the song builds steadily under the flame (5% → 52%) and eases up to full over 1.3 s after the drop. Drop impact 0.6 → 0.4. Fuse sound trimmed to 0.45 s to cut a loud bang that sat just before the drop.
 
+## Revision 4 (final)
+- Ending: the looped beat keeps playing and fades out smoothly over the last 1.4 s (23.6 → 25.0, sine curve); picture and slogan fade to black over the last 0.6 s.
+
 ## Version B (director's cut) — differences
 - 0.0–0.5 s cold-open teaser of the golden burst + impact, 0.3 s black, then bell (hooks viewers in the first second; deity shot shortened so all later timings stay identical).
 - Subtle film grain over the whole reel.
